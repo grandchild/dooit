@@ -58,7 +58,7 @@ Simply type `dooit` in your terminal to launch it. ezy pzy.
 > ⚠️ Note: The default icons used in the application are a part of [nerd fonts](https://www.nerdfonts.com/) \
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;and can be customised by changing the config file
 
-> ⚠️ Note: you must use python version >=3.10
+> ⚠️ Note: you must use python version >=3.8
 
 # Features 🌟
 
