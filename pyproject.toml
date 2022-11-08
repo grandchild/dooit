@@ -10,7 +10,7 @@ homepage = "https://github.com/kraanzu/dooit"
 repository = "https://github.com/kraanzu/dooit"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.8"
 textual = "^0.1.17"
 pyperclip = "^1.8.2"
 PyYAML = "^6.0"

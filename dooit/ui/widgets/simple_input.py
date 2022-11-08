@@ -1,5 +1,5 @@
 import pyperclip
-from typing import Literal
+from typing import List, Literal, Optional, Tuple
 from rich.console import RenderableType
 from rich.panel import Panel
 from rich.style import StyleType
@@ -54,14 +54,14 @@ class SimpleInput(Widget):
 
     def __init__(
         self,
-        name: str | None = None,
+        name: Optional[str] = None,
         title: TextType = "",
         title_align: AlignMethod = "center",
         border_style: StyleType = "blue",
-        box: Box | None = None,
+        box: Optional[Box] = None,
         placeholder: TextType = Text("", style="dim white"),
         password: bool = False,
-        list: tuple[Literal["blacklist", "whitelist"], list[str]] = ("blacklist", []),
+        list: Tuple[Literal["blacklist", "whitelist"], List[str]] = ("blacklist", []),
     ) -> None:
         super().__init__(name)
         self.title = title
@@ -181,7 +181,7 @@ class SimpleInput(Widget):
 
         return True
 
-    async def _insert_text(self, text: str | None = None) -> None:
+    async def _insert_text(self, text: Optional[str] = None) -> None:
         """
         Inserts text where the cursor is
         """
@@ -286,53 +286,50 @@ class SimpleInput(Widget):
         """
         prev = self._cursor_position
 
-        match key:
+        if key == "left": # Moving backward
+            await self._move_cursor_backward()
 
-            # Moving backward
-            case "left":
-                await self._move_cursor_backward()
+        if key == "ctrl+left":
+            await self._move_cursor_backward(word=True)
 
-            case "ctrl+left":
-                await self._move_cursor_backward(word=True)
+        if key == "ctrl+h":  # Backspace
+            await self._move_cursor_backward(delete=True)
 
-            case "ctrl+h":  # Backspace
-                await self._move_cursor_backward(delete=True)
+        if key == "ctrl+w":
+            await self._move_cursor_backward(word=True, delete=True)
 
-            case "ctrl+w":
-                await self._move_cursor_backward(word=True, delete=True)
+        # Moving forward
+        if key == "right":
+            await self._move_cursor_forward()
 
-            # Moving forward
-            case "right":
-                await self._move_cursor_forward()
+        if key == "ctrl+right":
+            await self._move_cursor_forward(word=True)
 
-            case "ctrl+right":
-                await self._move_cursor_forward(word=True)
+        if key == "delete":
+            await self._move_cursor_forward(delete=True)
 
-            case "delete":
-                await self._move_cursor_forward(delete=True)
+        if key == "ctrl+delete":
+            await self._move_cursor_forward(word=True, delete=True)
 
-            case "ctrl+delete":
-                await self._move_cursor_forward(word=True, delete=True)
+        if key == "ctrl+l":
+            await self.clear_input()
 
-            case "ctrl+l":
-                await self.clear_input()
+        # EXTRAS
+        if key == "home":
+            self._cursor_position = 0
 
-            # EXTRAS
-            case "home":
-                self._cursor_position = 0
+        if key == "end":
+            self._cursor_position = len(self.value)
 
-            case "end":
-                self._cursor_position = len(self.value)
+        if key == "ctrl+i":
+            await self._insert_text("\t")
 
-            case "ctrl+i":
-                await self._insert_text("\t")
-
-            # COPY-PASTA
-            case "ctrl+v":
-                try:
-                    await self._insert_text()
-                except:
-                    return
+        # COPY-PASTA
+        if key == "ctrl+v":
+            try:
+                await self._insert_text()
+            except:
+                return
 
         if len(key) == 1:
             await self._insert_text(key)

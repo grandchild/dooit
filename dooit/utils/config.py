@@ -2,6 +2,7 @@ import os
 import yaml
 from pathlib import Path
 from os import environ, path
+from typing import Dict, List, Optional
 
 HOME = Path.home()
 XDG_CONFIG = Path(path.expanduser(environ.get("XDG_CONFIG_HOME") or (HOME / ".config")))
@@ -12,7 +13,7 @@ SAMPLE = Path(__file__).parent.absolute() / "example_config.yaml"
 
 
 class Key:
-    def __init__(self, keybinds: dict[str, list[str]]):
+    def __init__(self, keybinds: Dict[str, List[str]]):
         # for i, j in keybinds.items():
         #     setattr(self, i, j)
 
@@ -68,7 +69,7 @@ class Config:
             self.keybinds = self.load_keybindings()
             self.keys = Key(self.keybinds)
 
-    def load_config(self, part: str = "main", sub: str | None = None) -> dict:
+    def load_config(self, part: str = "main", sub: Optional[str] = None) -> Dict:
         with open(CONFIG, "r", encoding="utf8") as stream:
             try:
                 if sub:
@@ -79,7 +80,7 @@ class Config:
                 self.make_new_config()
                 return self.load_config(part, sub)
 
-    def load_keybindings(self) -> dict[str, list[str]]:
+    def load_keybindings(self) -> Dict[str, List[str]]:
         keybinds = self.load_config("keybindings")
         for key in list(keybinds.keys()):
             bind = keybinds[key]

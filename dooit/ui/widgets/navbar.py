@@ -4,6 +4,7 @@ from rich.console import RenderableType
 from rich.text import Text
 from textual import events
 from textual.widgets import TreeNode, NodeID
+from typing import Optional
 
 from ...ui.widgets.simple_input import SimpleInput, View
 from ...ui.events import (
@@ -77,7 +78,7 @@ class Navbar(NestedListEdit):
         await self.post_message(ChangeStatus(self, "INSERT"))
         self.editing = True
 
-    async def remove_node(self, id: NodeID | None = None) -> None:
+    async def remove_node(self, id: Optional[NodeID] = None) -> None:
         await self.post_message(RemoveTopic(self, self._get_node_path()))
         await super().remove_node(id)
 

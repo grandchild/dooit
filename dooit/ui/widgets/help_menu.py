@@ -7,6 +7,7 @@ from rich.table import Table
 from rich.text import Text
 from rich.tree import Tree
 from textual.widget import Widget
+from typing import Dict, List
 
 from ...utils.config import conf, Key
 
@@ -23,7 +24,7 @@ def colored(text: str, color: StyleType) -> str:
 
 
 def generate_kb_table(
-    kb: dict[str, str], topic: str, notes: list[str] = []
+    kb: Dict[str, str], topic: str, notes: List[str] = []
 ) -> RenderableType:
     table = Table.grid(expand=False, padding=(0, 2))
     table.add_column("mode")

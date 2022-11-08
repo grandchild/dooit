@@ -8,6 +8,7 @@ from rich.text import Text
 from rich.style import StyleType
 from textual.widget import Widget
 from textual import events
+from typing import List, Optional
 
 from ...ui.events.events import ApplySortMethod, ChangeStatus
 from ...utils.config import conf
@@ -20,8 +21,8 @@ class SortOptions(Widget):
 
     def __init__(
         self,
-        name: str | None = None,
-        options: list[str] = [],
+        name: Optional[str] = None,
+        options: List[str] = [],
         style_unfocused: StyleType = "white",
         style_focused: StyleType = "bold reverse green ",
         pad: bool = True,
@@ -84,22 +85,21 @@ class SortOptions(Widget):
         event.stop()
 
         key = self.keys
-        match event.key:
-            case "escape":
-                # self.visible = False
-                # self.refresh()
-                await self.post_message(ChangeStatus(self, "NORMAL"))
-            case i if i in key.move_down:
-                self.move_cursor_down()
-            case i if i in key.move_up:
-                self.move_cursor_up()
-            case i if i in key.move_to_top:
-                self.move_cursor_to_top()
-            case i if i in key.move_to_bottom:
-                self.move_cursor_to_bottom()
-            case "enter":
-                await self.emit(ApplySortMethod(self, self.options[self.highlighted]))
-                await self.hide()
+        if event.key == "escape":
+            # self.visible = False
+            # self.refresh()
+            await self.post_message(ChangeStatus(self, "NORMAL"))
+        elif event.key in key.move_down:
+            self.move_cursor_down()
+        elif event.key in key.move_up:
+            self.move_cursor_up()
+        elif event.key in key.move_to_top:
+            self.move_cursor_to_top()
+        elif event.key in key.move_to_bottom:
+            self.move_cursor_to_bottom()
+        elif event.key == "enter":
+            await self.emit(ApplySortMethod(self, self.options[self.highlighted]))
+            await self.hide()
 
     def add_option(self, option: str) -> None:
         self.options.append(option)
@@ -114,15 +114,14 @@ class SortOptions(Widget):
 
         for index, option in enumerate(self.options):
             label = Text(option)
-            match option:
-                case "name":
-                    label = Text("    ") + label
-                case "date":
-                    label = Text("    ") + label
-                case "status":
-                    label = Text("    ") + label
-                case "urgency":
-                    label = Text("    ") + label
+            if option == "name":
+                label = Text("    ") + label
+            elif option == "date":
+                label = Text("    ") + label
+            elif option == "status":
+                label = Text("    ") + label
+            elif option == "urgency":
+                label = Text("    ") + label
 
             label.pad_right(self.size.width)
             label.plain = label.plain.ljust(20)

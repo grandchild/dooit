@@ -1,6 +1,7 @@
 from rich.console import RenderableType
 from rich.text import Text
 from textual.widget import Widget
+from typing import Optional
 
 from ...utils.config import conf
 
@@ -11,7 +12,7 @@ class Border(Widget):
     """
 
     def __init__(
-        self, name: str | None = None, color: str = "blue", item="", measure="width"
+        self, name: Optional[str] = None, color: str = "blue", item="", measure="width"
     ) -> None:
         super().__init__(name)
         self.highlight = False

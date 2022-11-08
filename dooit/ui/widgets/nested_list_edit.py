@@ -5,6 +5,7 @@ from rich.text import Text, TextType
 from textual import events
 from textual.widgets import TreeControl, TreeNode, NodeID
 from textual.messages import CursorMove
+from typing import Optional
 
 from ...ui.widgets.simple_input import SimpleInput, View
 
@@ -18,7 +19,7 @@ class NestedListEdit(TreeControl):
         self,
         label: TextType,
         data: RenderableType = SimpleInput(),
-        name: str | None = None,
+        name: Optional[str] = None,
         padding: PaddingDimensions = (1, 1),
         style_unfocus: StyleType = "d white",
         style_focus: StyleType = "b blue",
@@ -53,7 +54,7 @@ class NestedListEdit(TreeControl):
         await self.highlighted_node.data.remove_focus()
         self.editing = False
 
-    async def remove_node(self, id: NodeID | None = None) -> None:
+    async def remove_node(self, id: Optional[NodeID] = None) -> None:
         if id == self.root.id:
             return
 
@@ -179,46 +180,44 @@ class NestedListEdit(TreeControl):
 
     async def key_press(self, event: events.Key):
         if self.editing:
-            match event.key:
-                case "escape":
+            if event.key == "escape":
+                await self.unfocus_node()
+            elif event.key == "enter":
+                if self.highlighted_node.data.value:
                     await self.unfocus_node()
-                case "enter":
-                    if self.highlighted_node.data.value:
-                        await self.unfocus_node()
-                        if not self.editing:
-                            await self.add_sibling()
-                case _:
-                    await self.send_key_to_selected(event)
+                    if not self.editing:
+                        await self.add_sibling()
+            else:
+                await self.send_key_to_selected(event)
 
         else:
             keys = self.keys
-            match event.key:
-                case i if i in keys.move_down:
-                    await self.cursor_down()
-                case i if i in keys.shift_down:
-                    await self.shift_down()
-                case i if i in keys.move_up:
-                    await self.cursor_up()
-                case i if i in keys.shift_up:
-                    await self.shift_up()
-                case i if i in keys.move_to_top:
-                    await self.move_to_top()
-                case i if i in keys.move_to_bottom:
-                    await self.move_to_bottom()
-                case i if i in keys.toggle_expand:
-                    await self.toggle_expand()
-                case i if i in keys.toggle_expand_parent:
-                    await self.toggle_expand_parent()
-                case i if i in keys.add_child:
-                    await self.add_child()
-                case i if i in keys.add_sibling:
-                    await self.add_sibling()
-                case i if i in keys.edit_node:
-                    if self.highlighted != self.root.id:
-                        await self.focus_node()
-                case i if i in keys.remove_node:
-                    if self.highlighted != self.root.id:
-                        await self.remove_node()
+            if event.key in keys.move_down:
+                await self.cursor_down()
+            elif event.key in keys.shift_down:
+                await self.shift_down()
+            elif event.key in keys.move_up:
+                await self.cursor_up()
+            elif event.key in keys.shift_up:
+                await self.shift_up()
+            elif event.key in keys.move_to_top:
+                await self.move_to_top()
+            elif event.key in keys.move_to_bottom:
+                await self.move_to_bottom()
+            elif event.key in keys.toggle_expand:
+                await self.toggle_expand()
+            elif event.key in keys.toggle_expand_parent:
+                await self.toggle_expand_parent()
+            elif event.key in keys.add_child:
+                await self.add_child()
+            elif event.key in keys.add_sibling:
+                await self.add_sibling()
+            elif event.key in keys.edit_node:
+                if self.highlighted != self.root.id:
+                    await self.focus_node()
+            elif event.key in keys.remove_node:
+                if self.highlighted != self.root.id:
+                    await self.remove_node()
 
         self.refresh()
 

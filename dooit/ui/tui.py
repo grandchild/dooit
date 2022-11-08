@@ -17,6 +17,7 @@ from textual.app import App
 from textual.layouts.dock import DockLayout
 from textual.layouts.grid import GridLayout
 from textual.widget import Widget
+from typing import Dict, List
 
 
 from .events import *  # NOQA
@@ -231,7 +232,7 @@ class Doit(App):
 
         self.grid.add_areas(**{"bar": "0-start|1-end,bar"})
 
-    def _make_box(self, areas: dict[str, str]) -> list[Widget]:
+    def _make_box(self, areas: Dict[str, str]) -> List[Widget]:
         """
         Make border for trees
         """
@@ -273,13 +274,12 @@ class Doit(App):
                 height=round(get_terminal_size()[1] * 0.8),
             )
         else:
-            match self.current_status:
-                case "SEARCH":
-                    main_area_widget = self.search_tree
-                case "SORT":
-                    main_area_widget = self.sort_menu
-                case _:
-                    main_area_widget = self.todo_lists[self.current_menu]
+            if self.current_status == "SEARCH":
+                main_area_widget = self.search_tree
+            elif self.current_status == "SORT":
+                main_area_widget = self.sort_menu
+            else:
+                main_area_widget = self.todo_lists[self.current_menu]
 
         await self.main_area_scroll.update(main_area_widget)
 
@@ -298,15 +298,14 @@ class Doit(App):
             for i in var:
                 i.illuminate()
 
-        match new_tab:
-            case "navbar":
-                self.current_tab = self.navbar_heading
-                illuminate(self.navbar_box)
-                dim(self.todos_box)
-            case "todos":
-                self.current_tab = self.todos_heading
-                dim(self.navbar_box)
-                illuminate(self.todos_box)
+        if new_tab == "navbar":
+            self.current_tab = self.navbar_heading
+            illuminate(self.navbar_box)
+            dim(self.todos_box)
+        elif new_tab == "todos":
+            self.current_tab = self.todos_heading
+            dim(self.navbar_box)
+            illuminate(self.todos_box)
 
         self.current_tab.highlight()
 
@@ -320,15 +319,14 @@ class Doit(App):
             self.change_current_tab("navbar")
 
     async def handle_help_key(self, event: events.Key):
-        match event.key:
-            case i if i in keys.move_down:
-                await self.help_menu.key_down()
-            case i if i in keys.move_up:
-                await self.help_menu.key_up()
-            case i if i in keys.move_to_top:
-                await self.help_menu.key_home()
-            case i if i in keys.move_to_bottom:
-                await self.help_menu.key_end()
+        if event.key in keys.move_down:
+            await self.help_menu.key_down()
+        elif event.key  in keys.move_up:
+            await self.help_menu.key_up()
+        elif event.key  in keys.move_to_top:
+            await self.help_menu.key_home()
+        elif event.key  in keys.move_to_bottom:
+            await self.help_menu.key_end()
 
     async def key_press(self, event: events.Key) -> None:
         if (event.key in keys.show_help and self.current_status == "NORMAL") or (
@@ -346,27 +344,26 @@ class Doit(App):
         if self.current_tab == self.navbar_heading:
             await self.navbar.key_press(event)
         else:
-            match self.current_status:
-                case "SEARCH":
-                    await self.search_tree.key_press(event)
-                    self.status_bar.set_message(self.search_tree.search.render())
+            if self.current_status == "SEARCH":
+                await self.search_tree.key_press(event)
+                self.status_bar.set_message(self.search_tree.search.render())
 
-                case "SORT":
-                    await self.sort_menu.key_press(event)
+            elif self.current_status == "SORT":
+                await self.sort_menu.key_press(event)
 
-                case "NORMAL":
-                    if event.key in keys.start_search:
-                        await self.search_tree.set_values(self.todo_list.nodes)
-                        await self.post_message(ChangeStatus(self, "SEARCH"))
+            elif self.current_status == "NORMAL":
+                if event.key in keys.start_search:
+                    await self.search_tree.set_values(self.todo_list.nodes)
+                    await self.post_message(ChangeStatus(self, "SEARCH"))
 
-                    elif event.key in keys.spawn_sort_menu:
-                        await self.popup_sort()
+                elif event.key in keys.spawn_sort_menu:
+                    await self.popup_sort()
 
-                    else:
-                        await self.todo_list.key_press(event)
-
-                case _:
+                else:
                     await self.todo_list.key_press(event)
+
+            else:
+                await self.todo_list.key_press(event)
 
         self.refresh(layout=True)
 

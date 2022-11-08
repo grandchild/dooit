@@ -2,6 +2,7 @@ import yaml
 from pathlib import Path
 from os import mkdir, remove, environ
 from pickle import load
+from typing import Dict
 
 from ..ui.widgets import Entry, Navbar, SimpleInput, TodoList
 from ..utils.config import HOME, XDG_CONFIG
@@ -17,7 +18,7 @@ class Parser:
 
     # --------------------------------
 
-    def save(self, todo: dict[str, TodoList]):
+    def save(self, todo: Dict[str, TodoList]):
         def make_yaml(todolist: TodoList):
             arr = []
             for parent in todolist.root.children:
@@ -104,7 +105,7 @@ class Parser:
             return await self.convert_topic(load(f))
 
     # DEPRECATED: will be removed in v0.3.0
-    async def load_todo(self) -> dict[str, TodoList]:
+    async def load_todo(self) -> Dict[str, TodoList]:
         with open(self.old_todo_path, "rb") as f:
             return {i: await self.convert_todo(j) for i, j in load(f).items()}
 

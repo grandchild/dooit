@@ -1,7 +1,7 @@
 import re
 from os import get_terminal_size
 from datetime import datetime
-from typing import Callable
+from typing import Callable, List, Optional, Union
 import pyperclip
 from rich.align import Align
 from rich.console import RenderableType
@@ -48,7 +48,7 @@ class TodoList(NestedListEdit):
     A Class that allows editing while displaying trees
     """
 
-    def __init__(self, name: str | None = None):
+    def __init__(self, name: Optional[str] = None):
         super().__init__(
             "",
             Entry(),
@@ -65,7 +65,7 @@ class TodoList(NestedListEdit):
         self.icons = self.config["icons"]
         self.keys = conf.keys
 
-    async def _sort_by_arrangement(self, seq: list[int]) -> None:
+    async def _sort_by_arrangement(self, seq: List[int]) -> None:
 
         parent = self.highlighted_node.parent
         if not parent:
@@ -102,13 +102,12 @@ class TodoList(NestedListEdit):
 
     async def sort_by_status(self) -> None:
         def f(status: str) -> int:
-            match status:
-                case "OVERDUE":
-                    return 1
-                case "PENDING":
-                    return 2
-                case "COMPLETED":
-                    return 3
+            if status == "OVERDUE":
+                return 1
+            elif status == "PENDING":
+                return 2
+            elif status == "COMPLETED":
+                return 3
             return 0
 
         await self._sort(
@@ -201,68 +200,66 @@ class TodoList(NestedListEdit):
 
     async def key_press(self, event: events.Key) -> None:
         if self.editing:
-            match event.key:
-                case "escape":
+            if event.key == "escape":
+                await self.unfocus_node()
+            elif event.key == "enter":
+                if (
+                    self.focused == "about"
+                    and self.highlighted_node.data.about.value
+                ):
                     await self.unfocus_node()
-                case "enter":
-                    if (
-                        self.focused == "about"
-                        and self.highlighted_node.data.about.value
-                    ):
-                        await self.unfocus_node()
-                        if not self.editing:
-                            await self.add_sibling()
+                    if not self.editing:
+                        await self.add_sibling()
 
-                case _:
-                    await self.send_key_to_selected(event)
+            else:
+                await self.send_key_to_selected(event)
 
         else:
             keys = self.keys
-            match event.key:
-                case i if i in keys.move_down:
-                    await self.cursor_down()
-                case i if i in keys.shift_down:
-                    await self.shift_down()
-                case i if i in keys.move_up:
-                    await self.cursor_up()
-                case i if i in keys.shift_up:
-                    await self.shift_up()
-                case i if i in keys.move_to_top:
-                    await self.move_to_top()
-                case i if i in keys.move_to_bottom:
-                    await self.move_to_bottom()
-                case i if i in keys.toggle_expand:
-                    await self.toggle_expand()
-                case i if i in keys.toggle_expand_parent:
-                    await self.toggle_expand_parent()
-                case i if i in keys.add_child:
-                    await self.add_child()
-                case i if i in keys.add_sibling:
-                    await self.add_sibling()
-                case i if i in keys.edit_node:
-                    await self.focus_node("about", "INSERT")
-                case i if i in keys.edit_date:
-                    await self.focus_node("due", "DATE")
-                case i if i in keys.remove_node:
-                    await self.remove_node()
-                case i if i in keys.toggle_complete:
-                    await self.mark_complete()
-                case i if i in keys.increase_urgency:
-                    self.highlighted_node.data.increase_urgency()
-                case i if i in keys.decrease_urgency:
-                    self.highlighted_node.data.decrease_urgency()
-                case i if i in keys.yank_todo:
-                    try:
-                        pyperclip.copy(self.highlighted_node.data.about.value)
-                        await self.post_message(Notify(self, "Copied to Clipboard!"))
-                    except:
-                        await self.post_message(
-                            Notify(self, "Cannot copy to Clipboard :(")
-                        )
+            if event.key in keys.move_down:
+                await self.cursor_down()
+            elif event.key in keys.shift_down:
+                await self.shift_down()
+            elif event.key in keys.move_up:
+                await self.cursor_up()
+            elif event.key in keys.shift_up:
+                await self.shift_up()
+            elif event.key in keys.move_to_top:
+                await self.move_to_top()
+            elif event.key in keys.move_to_bottom:
+                await self.move_to_bottom()
+            elif event.key in keys.toggle_expand:
+                await self.toggle_expand()
+            elif event.key in keys.toggle_expand_parent:
+                await self.toggle_expand_parent()
+            elif event.key in keys.add_child:
+                await self.add_child()
+            elif event.key in keys.add_sibling:
+                await self.add_sibling()
+            elif event.key in keys.edit_node:
+                await self.focus_node("about", "INSERT")
+            elif event.key in keys.edit_date:
+                await self.focus_node("due", "DATE")
+            elif event.key in keys.remove_node:
+                await self.remove_node()
+            elif event.key in keys.toggle_complete:
+                await self.mark_complete()
+            elif event.key in keys.increase_urgency:
+                self.highlighted_node.data.increase_urgency()
+            elif event.key in keys.decrease_urgency:
+                self.highlighted_node.data.decrease_urgency()
+            elif event.key in keys.yank_todo:
+                try:
+                    pyperclip.copy(self.highlighted_node.data.about.value)
+                    await self.post_message(Notify(self, "Copied to Clipboard!"))
+                except:
+                    await self.post_message(
+                        Notify(self, "Cannot copy to Clipboard :(")
+                    )
 
-                case i if i in keys.move_focus_to_menu:
-                    if not self.editing:
-                        await self.post_message(SwitchTab(self))
+            elif event.key in keys.move_focus_to_menu:
+                if not self.editing:
+                    await self.post_message(SwitchTab(self))
 
         self.refresh()
 
@@ -274,77 +271,76 @@ class TodoList(NestedListEdit):
         await self.update_due_status()
 
     async def check_node(self) -> bool:
-        match self.focused:
-            case "about":
-                val = self.highlighted_node.data.about.value.strip()
-                if not val:
-                    if not self.prev_about:
-                        await self.remove_node()
-                        return True
-                    else:
-                        self.highlighted_node.data.about.value = self.prev_about
-                        await self.post_message(
-                            Notify(
-                                self, f"{WARNING}: Empty todo! Reverting to original"
-                            )
-                        )
-                        return True
-
-                if (
-                    sum(
-                        i.data.about.value == val
-                        for i in (self.highlighted_node.parent or self.root).children
-                    )
-                    > 1
-                ):
+        if self.focused == "about":
+            val = self.highlighted_node.data.about.value.strip()
+            if not val:
+                if not self.prev_about:
+                    await self.remove_node()
+                    return True
+                else:
+                    self.highlighted_node.data.about.value = self.prev_about
                     await self.post_message(
                         Notify(
-                            self,
-                            f"{WARNING}: Duplicate todo sibling !"
-                            if not self.warn
-                            else "Todo deleted!",
+                            self, f"{WARNING}: Empty todo! Reverting to original"
                         )
                     )
-                    return False
+                    return True
 
-            case "due":
-                date = self.highlighted_node.data.due.value.strip()
-                today = datetime.today()
-
-                if len(date) == 0:
-                    pass
-                elif re.findall(r"^\d(?:\d?)$", date):
-                    # just day
-                    date = f"{int(date):02}-{today.strftime('%m-%Y')}"
-                elif re.findall(r"^\d(?:\d?)-\d(?:\d?)$", date):
-                    # day and month
-                    date = date.split("-")
-                    date = f"{int(date[0]):02}-{int(date[1]):02}-{today.strftime('%Y')}"
-                elif re.findall(r"^\d(?:\d?)-\d(?:\d?)-\d(?:\d?)(?:\d?)(?:\d?)$", date):
-                    date = date.split("-")
-                    year = str(date[2])
-                    y2k = "2000"  # assuming this code is not used after the year 2999
-                    date = f"{int(date[0]):02}-{int(date[1]):02}-{y2k[:-len(year)] + year}"
-                else:
-                    await self.post_message(
-                        Notify(
-                            self,
-                            message="Invalid date format! Enter in format: dd-mm-yyyy",
-                        )
+            if (
+                sum(
+                    i.data.about.value == val
+                    for i in (self.highlighted_node.parent or self.root).children
+                )
+                > 1
+            ):
+                await self.post_message(
+                    Notify(
+                        self,
+                        f"{WARNING}: Duplicate todo sibling !"
+                        if not self.warn
+                        else "Todo deleted!",
                     )
+                )
+                return False
 
-                if len(date) != 0 and not self._is_valid_date(date):
-                    date = self.prev_date
-                    await self.post_message(
-                        Notify(self, message="Please enter a valid date")
-                    )
-                else:
-                    await self.post_message(
-                        Notify(self, message="Your due date was updated")
-                    )
+        elif self.focused == "due":
+            date = self.highlighted_node.data.due.value.strip()
+            today = datetime.today()
 
-                self.highlighted_node.data.due.value = date
-                await self.update_due_status()
+            if len(date) == 0:
+                pass
+            elif re.findall(r"^\d(?:\d?)$", date):
+                # just day
+                date = f"{int(date):02}-{today.strftime('%m-%Y')}"
+            elif re.findall(r"^\d(?:\d?)-\d(?:\d?)$", date):
+                # day and month
+                date = date.split("-")
+                date = f"{int(date[0]):02}-{int(date[1]):02}-{today.strftime('%Y')}"
+            elif re.findall(r"^\d(?:\d?)-\d(?:\d?)-\d(?:\d?)(?:\d?)(?:\d?)$", date):
+                date = date.split("-")
+                year = str(date[2])
+                y2k = "2000"  # assuming this code is not used after the year 2999
+                date = f"{int(date[0]):02}-{int(date[1]):02}-{y2k[:-len(year)] + year}"
+            else:
+                await self.post_message(
+                    Notify(
+                        self,
+                        message="Invalid date format! Enter in format: dd-mm-yyyy",
+                    )
+                )
+
+            if len(date) != 0 and not self._is_valid_date(date):
+                date = self.prev_date
+                await self.post_message(
+                    Notify(self, message="Please enter a valid date")
+                )
+            else:
+                await self.post_message(
+                    Notify(self, message="Your due date was updated")
+                )
+
+            self.highlighted_node.data.due.value = date
+            await self.update_due_status()
 
         self.focused = None
         self.refresh()
@@ -389,7 +385,7 @@ class TodoList(NestedListEdit):
         entry.due.view = View(0, percentage(25, self.size.width - 2) - 6 - (child * 3))
         return entry
 
-    async def reach_to_node(self, id: TreeNode | NodeID) -> None:
+    async def reach_to_node(self, id: Union[TreeNode, NodeID]) -> None:
 
         if isinstance(id, TreeNode):
             id = id.id
@@ -449,11 +445,10 @@ class TodoList(NestedListEdit):
         table.add_column("urgency", justify="left", width=2)
 
         color = "yellow"
-        match node.data.status:
-            case "COMPLETED":
-                color = "green"
-            case "OVERDUE":
-                color = "red"
+        if node.data.status == "COMPLETED":
+            color = "green"
+        elif node.data.status == "OVERDUE":
+            color = "red"
 
         table.add_row(
             self.render_about(node, color),
@@ -504,28 +499,27 @@ class TodoList(NestedListEdit):
 
         # setup pre-icons
         if node != self.root:
-            match node.data.status:
-                case "COMPLETED":
-                    label = (
-                        Text.from_markup(
-                            f"[b green]{self.icons['todo_completed']}  [/b green]"
-                        )
-                        + label
+            if node.data.status == "COMPLETED":
+                label = (
+                    Text.from_markup(
+                        f"[b green]{self.icons['todo_completed']}  [/b green]"
                     )
-                case "PENDING":
-                    label = (
-                        Text.from_markup(
-                            f"[b yellow]{self.icons['todo_pending']}  [/b yellow]"
-                        )
-                        + label
+                    + label
+                )
+            elif node.data.status == "PENDING":
+                label = (
+                    Text.from_markup(
+                        f"[b yellow]{self.icons['todo_pending']}  [/b yellow]"
                     )
-                case "OVERDUE":
-                    label = (
-                        Text.from_markup(
-                            f"[b red]{self.icons['todo_overdue']}  [/b red]"
-                        )
-                        + label
+                    + label
+                )
+            elif node.data.status == "OVERDUE":
+                label = (
+                    Text.from_markup(
+                        f"[b red]{self.icons['todo_overdue']}  [/b red]"
                     )
+                    + label
+                )
 
         meta = {
             "@click": "click_about()",

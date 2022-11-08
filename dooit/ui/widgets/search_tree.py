@@ -4,6 +4,7 @@ from rich.console import RenderableType
 from rich.text import Text
 from textual import events
 from textual.widgets import NodeID, TreeNode
+from typing import Dict
 
 from ...ui.events.events import ChangeStatus, HighlightNode
 from ...ui.widgets.simple_input import SimpleInput, View
@@ -44,7 +45,7 @@ class SearchTree(TodoList):
         Initialize with all the values
         """
 
-        self.all_nodes: dict[NodeID, TreeNode] = nodes
+        self.all_nodes: Dict[NodeID, TreeNode] = nodes
         self.search = SimpleInput()
         self.search.view = View(0, 100)
         self.search.on_focus()
@@ -85,36 +86,34 @@ class SearchTree(TodoList):
 
     async def key_press(self, event: events.Key) -> None:
         if self.searching:
-            match event.key:
-                case "escape":
-                    if self.searching:
-                        self.searching = False
-                        self.search.on_blur()
-                        self.highlight(self.root.id)
-                        await self.cursor_down()
+            if event.key == "escape":
+                if self.searching:
+                    self.searching = False
+                    self.search.on_blur()
+                    self.highlight(self.root.id)
+                    await self.cursor_down()
 
-                case _:
-                    await self.search.handle_keypress(event.key)
-                    await self.refresh_search()
+            else:
+                await self.search.handle_keypress(event.key)
+                await self.refresh_search()
 
         else:
             keys = self.keys
-            match event.key:
-                case i if i in keys.start_search:
+            if event.key in keys.start_search:
                     self.searching = True
                     self.search.on_focus()
-                case "escape":
-                    await self.post_message(ChangeStatus(self, "NORMAL"))
-                case i if i in keys.move_down:
-                    await self.cursor_down()
-                case i if i in keys.move_up:
-                    await self.cursor_up()
-                case i if i in keys.move_to_top:
-                    await self.move_to_top()
-                case i if i in keys.move_to_bottom:
-                    await self.move_to_bottom()
-                case "enter":
-                    await self.post_message(ChangeStatus(self, "NORMAL"))
-                    await self.post_message(HighlightNode(self, await self.find_id()))
+            elif event.key == "escape":
+                await self.post_message(ChangeStatus(self, "NORMAL"))
+            elif event.key in keys.move_down:
+                await self.cursor_down()
+            elif event.key in keys.move_up:
+                await self.cursor_up()
+            elif event.key in keys.move_to_top:
+                await self.move_to_top()
+            elif event.key in keys.move_to_bottom:
+                await self.move_to_bottom()
+            elif event.key == "enter":
+                await self.post_message(ChangeStatus(self, "NORMAL"))
+                await self.post_message(HighlightNode(self, await self.find_id()))
 
         self.refresh()

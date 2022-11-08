@@ -5,6 +5,7 @@ from rich.style import StyleType
 from rich.table import Table
 from rich.text import Text
 from textual.widget import Widget
+from typing import List, Optional
 
 from ...utils.config import conf
 
@@ -16,8 +17,8 @@ class Box(Widget):
 
     def __init__(
         self,
-        name: str | None = None,
-        options: list[str] = [],
+        name: Optional[str] = None,
+        options: List[str] = [],
         color: StyleType = "blue",
     ) -> None:
         super().__init__(name=name)

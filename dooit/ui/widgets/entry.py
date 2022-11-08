@@ -1,4 +1,4 @@
-from typing import Any, Literal
+from typing import Any, Literal, Dict, Optional
 from textual import events
 from rich.text import TextType
 from string import printable as chars
@@ -21,7 +21,7 @@ class Entry(SimpleInput):
     A Simple subclass of TextInput widget with no borders
     """
 
-    def __init__(self, name: str | None = None) -> None:
+    def __init__(self, name: Optional[str] = None) -> None:
         super().__init__(name, placeholder="")
         self.name = name
         self.about = SimpleInput()
@@ -62,7 +62,7 @@ class Entry(SimpleInput):
         self.refresh()
 
     # DEPRECATED: will be removed in v0.3.0
-    def encode(self) -> dict[str, Any]:
+    def encode(self) -> Dict[str, Any]:
         return {
             "about": self.about.value,
             "urgency": self.urgency,
@@ -72,7 +72,7 @@ class Entry(SimpleInput):
 
     # DEPRECATED: will be removed in v0.3.0
     @classmethod
-    def from_encoded(cls, data: dict[str, Any]) -> "Entry":
+    def from_encoded(cls, data: Dict[str, Any]) -> "Entry":
         entry = cls()
         entry.about.value = data["about"]
         entry.urgency = data["urgency"]
@@ -81,13 +81,12 @@ class Entry(SimpleInput):
         return entry
 
     def to_txt(self) -> str:
-        match self.status:
-            case "PENDING":
-                status = "x"
-            case "COMPLETED":
-                status = "X"
-            case _:
-                status = "O"  # OVERDUE
+        if self.status == "PENDING":
+            status = "x"
+        elif self.status == "COMPLETED":
+            status = "X"
+        else:
+            status = "O"  # OVERDUE
 
         return f"{status} ({self.urgency}) due:{self.due.value or 'None'} {self.about.value}"
 
@@ -95,13 +94,12 @@ class Entry(SimpleInput):
     def from_txt(cls, txt: str):
         status, urgency, due, *about = txt.split()
 
-        match status:
-            case "x":
-                status = "PENDING"
-            case "X":
-                status = "COMPLETED"
-            case _:
-                status = "OVERDUE"
+        if status == "x":
+            status = "PENDING"
+        elif status == "X":
+            status = "COMPLETED"
+        else:
+            status = "OVERDUE"
 
         about = " ".join(about)
 
